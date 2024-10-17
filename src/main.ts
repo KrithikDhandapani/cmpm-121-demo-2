@@ -16,30 +16,49 @@ const clearCanvasButton = document.querySelector<HTMLButtonElement>("#clearCanva
 const canvasContext = canvasElement.getContext("2d");
 
 let isMouseDrawing = false;
+let drawnPaths: { x: number; y: number }[][] = [];
+let currentPath: { x: number; y: number }[] = [];
 
 canvasElement.addEventListener("mousedown", (event) => {
   isMouseDrawing = true;
-  canvasContext?.beginPath();
-  canvasContext?.moveTo(event.offsetX, event.offsetY);
+  currentPath = [{ x: event.offsetX, y: event.offsetY }];
+  drawnPaths.push(currentPath);
 });
 
 canvasElement.addEventListener("mousemove", (event) => {
   if (isMouseDrawing) {
-    canvasContext?.lineTo(event.offsetX, event.offsetY);
-    canvasContext?.stroke();
+    currentPath.push({ x: event.offsetX, y: event.offsetY });
+    canvasElement.dispatchEvent(new Event("drawing-changed"));
   }
 });
 
 canvasElement.addEventListener("mouseup", () => {
   isMouseDrawing = false;
-  canvasContext?.closePath();
+  canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
 canvasElement.addEventListener("mouseleave", () => {
   isMouseDrawing = false;
-  canvasContext?.closePath();
+  canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
 clearCanvasButton.addEventListener("click", () => {
+  drawnPaths = [];
+  canvasElement.dispatchEvent(new Event("drawing-changed"));
+});
+
+canvasElement.addEventListener("drawing-changed", () => {
   canvasContext?.clearRect(0, 0, canvasElement.width, canvasElement.height);
+  
+  drawnPaths.forEach(path => {
+    if (path.length > 1) {
+      canvasContext?.beginPath();
+      canvasContext?.moveTo(path[0].x, path[0].y);
+      path.forEach(point => {
+        canvasContext?.lineTo(point.x, point.y);
+      });
+      canvasContext?.stroke();
+      canvasContext?.closePath();
+    }
+  });
 });

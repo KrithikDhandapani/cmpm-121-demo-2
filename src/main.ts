@@ -27,14 +27,14 @@ canvasElement.addEventListener("mousedown", (event) => {
 
 canvasElement.addEventListener("mousemove", (event) => {
   if (isMouseDrawing) {
-    currentPath.push({ x: event.offsetX, y: event.offsetY });
+    currentPath.push({ x: event.offsetX, y: event.offsetY }); // Add new points to the current path
     canvasElement.dispatchEvent(new Event("drawing-changed"));
   }
 });
 
 canvasElement.addEventListener("mouseup", () => {
   isMouseDrawing = false;
-  canvasElement.dispatchEvent(new Event("drawing-changed"));
+  canvasElement.dispatchEvent(new Event("drawing-changed")); // Trigger event to finalize the drawing
 });
 
 canvasElement.addEventListener("mouseleave", () => {
@@ -44,7 +44,7 @@ canvasElement.addEventListener("mouseleave", () => {
 
 clearCanvasButton.addEventListener("click", () => {
   drawnPaths = [];
-  canvasElement.dispatchEvent(new Event("drawing-changed"));
+  canvasElement.dispatchEvent(new Event("drawing-changed")); // Trigger event to clear and refresh the canvas
 });
 
 canvasElement.addEventListener("drawing-changed", () => {

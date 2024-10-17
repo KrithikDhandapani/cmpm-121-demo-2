@@ -1,7 +1,11 @@
 import "./style.css";
 
-const APP_NAME = "Hello, I am Krithik";
+const APP_NAME = "Krithik's Website";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 document.title = APP_NAME;
-app.innerHTML = APP_NAME;
+
+app.innerHTML = `
+  <h1>${APP_NAME}</h1>
+  <canvas id="myCanvas" width="256" height="256"></canvas>
+`;

@@ -100,7 +100,7 @@ button:focus-visible {
   display: block;
   margin: 20px auto;
 }
-#mainCanvas {
+#drawingCanvas {
   border: 2px solid black;
   border-radius: 15px;
   box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
@@ -115,4 +115,5 @@ button:focus-visible {
   font-size: 1rem;
   cursor: pointer;
 }
+
 

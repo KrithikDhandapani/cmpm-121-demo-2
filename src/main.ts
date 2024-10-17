@@ -1,46 +1,45 @@
 import "./style.css";
 
 const APP_TITLE = "Hello, I am Krithik";
-
 const appContainer = document.querySelector<HTMLDivElement>("#app")!;
 
 document.title = APP_TITLE;
 
 appContainer.innerHTML = `
   <h1>${APP_TITLE}</h1>
-  <canvas id="mainCanvas" width="256" height="256"></canvas>
+  <canvas id="drawingCanvas" width="256" height="256"></canvas>
   <button id="clearCanvasButton">Clear</button>
 `;
 
-const canvas = document.querySelector<HTMLCanvasElement>("#mainCanvas")!;
-const clearButton = document.querySelector<HTMLButtonElement>("#clearCanvasButton")!;
-const ctx = canvas.getContext("2d");
+const canvasElement = document.querySelector<HTMLCanvasElement>("#drawingCanvas")!;
+const clearCanvasButton = document.querySelector<HTMLButtonElement>("#clearCanvasButton")!;
+const canvasContext = canvasElement.getContext("2d");
 
-let isDrawing = false;
+let isMouseDrawing = false;
 
-canvas.addEventListener("mousedown", (e) => {
-  isDrawing = true;
-  ctx?.beginPath();
-  ctx?.moveTo(e.offsetX, e.offsetY);
+canvasElement.addEventListener("mousedown", (event) => {
+  isMouseDrawing = true;
+  canvasContext?.beginPath();
+  canvasContext?.moveTo(event.offsetX, event.offsetY);
 });
 
-canvas.addEventListener("mousemove", (e) => {
-  if (isDrawing) {
-    ctx?.lineTo(e.offsetX, e.offsetY);
-    ctx?.stroke();
+canvasElement.addEventListener("mousemove", (event) => {
+  if (isMouseDrawing) {
+    canvasContext?.lineTo(event.offsetX, event.offsetY);
+    canvasContext?.stroke();
   }
 });
 
-canvas.addEventListener("mouseup", () => {
-  isDrawing = false;
-  ctx?.closePath();
+canvasElement.addEventListener("mouseup", () => {
+  isMouseDrawing = false;
+  canvasContext?.closePath();
 });
 
-canvas.addEventListener("mouseleave", () => {
-  isDrawing = false;
-  ctx?.closePath();
+canvasElement.addEventListener("mouseleave", () => {
+  isMouseDrawing = false;
+  canvasContext?.closePath();
 });
 
-clearButton.addEventListener("click", () => {
-  ctx?.clearRect(0, 0, canvas.width, canvas.height);
+clearCanvasButton.addEventListener("click", () => {
+  canvasContext?.clearRect(0, 0, canvasElement.width, canvasElement.height);
 });

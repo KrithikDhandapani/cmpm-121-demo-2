@@ -100,4 +100,19 @@ button:focus-visible {
   display: block;
   margin: 20px auto;
 }
+#mainCanvas {
+  border: 2px solid black;
+  border-radius: 15px;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+  display: block;
+  margin: 20px auto;
+}
+
+#clearCanvasButton {
+  display: block;
+  margin: 10px auto;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+}
 

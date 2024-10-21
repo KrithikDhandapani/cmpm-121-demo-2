@@ -11,29 +11,34 @@ appContainer.innerHTML = `
   <button id="clearCanvasButton">Clear</button>
   <button id="undoButton">Undo</button>
   <button id="redoButton">Redo</button>
+  <button id="thinMarkerButton">Thin Marker</button>
+  <button id="thickMarkerButton">Thick Marker</button>
 `;
 
 const canvasElement = document.querySelector<HTMLCanvasElement>("#drawingCanvas")!;
 const clearCanvasButton = document.querySelector<HTMLButtonElement>("#clearCanvasButton")!;
 const undoButton = document.querySelector<HTMLButtonElement>("#undoButton")!;
 const redoButton = document.querySelector<HTMLButtonElement>("#redoButton")!;
+const thinMarkerButton = document.querySelector<HTMLButtonElement>("#thinMarkerButton")!;
+const thickMarkerButton = document.querySelector<HTMLButtonElement>("#thickMarkerButton")!;
 const canvasContext = canvasElement.getContext("2d");
 
-// Class to store drawing points
+// Default marker thickness
+let currentThickness = 2; 
+
 class MarkerLine {
   private points: { x: number; y: number }[] = [];
+  private thickness: number;  // Line thickness
 
-  // Store the initial position
-  constructor(initialX: number, initialY: number) {
+  constructor(initialX: number, initialY: number, thickness: number) {
     this.points.push({ x: initialX, y: initialY });
+    this.thickness = thickness;  // Set line thickness
   }
 
-  // Add points as user drags
   drag(x: number, y: number) {
     this.points.push({ x, y });
   }
 
-  // Display the line on canvas
   display(ctx: CanvasRenderingContext2D) {
     if (this.points.length > 1) {
       ctx.beginPath();
@@ -41,79 +46,86 @@ class MarkerLine {
       this.points.forEach(point => {
         ctx.lineTo(point.x, point.y);
       });
+      ctx.lineWidth = this.thickness;  // Set line width based on thickness
       ctx.stroke();
       ctx.closePath();
     }
   }
 }
 
-// Variables for drawing states
 let isMouseDrawing = false;
-let drawnPaths: MarkerLine[] = [];  // Array of drawn lines
-let currentPath: MarkerLine | null = null;  // Line currently being drawn
-let redoStack: MarkerLine[] = [];  // Stack for redo paths
+let drawnPaths: MarkerLine[] = [];  
+let currentPath: MarkerLine | null = null;  
+let redoStack: MarkerLine[] = [];
 
-// Start drawing on mousedown
+thinMarkerButton.addEventListener("click", () => {
+  currentThickness = 2;  // Set to thin line
+  selectTool(thinMarkerButton);  // Add selected class to button
+});
+
+thickMarkerButton.addEventListener("click", () => {
+  currentThickness = 6;  // Set to thick line
+  selectTool(thickMarkerButton);  // Add selected class to button
+});
+
+function selectTool(button: HTMLButtonElement) {
+  thinMarkerButton.classList.remove("selectedTool");
+  thickMarkerButton.classList.remove("selectedTool");
+  button.classList.add("selectedTool");
+}
+
 canvasElement.addEventListener("mousedown", (event) => {
   isMouseDrawing = true;
-  
-  currentPath = new MarkerLine(event.offsetX, event.offsetY);  // Create new line
-  drawnPaths.push(currentPath);  // Add to drawn paths
-  redoStack = [];  // Clear redo stack on new draw
+  currentPath = new MarkerLine(event.offsetX, event.offsetY, currentThickness);  // Pass thickness
+  drawnPaths.push(currentPath);
+  redoStack = [];
 });
 
-// Add points on mousemove
 canvasElement.addEventListener("mousemove", (event) => {
   if (isMouseDrawing && currentPath) {
-    currentPath.drag(event.offsetX, event.offsetY);  // Add new points
-    canvasElement.dispatchEvent(new Event("drawing-changed"));  // Trigger redraw
+    currentPath.drag(event.offsetX, event.offsetY);
+    canvasElement.dispatchEvent(new Event("drawing-changed"));
   }
 });
 
-// Stop drawing on mouseup
 canvasElement.addEventListener("mouseup", () => {
   isMouseDrawing = false;
-  currentPath = null;  // Reset current path
-  canvasElement.dispatchEvent(new Event("drawing-changed"));  // Trigger redraw
+  currentPath = null;
+  canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
-// Handle when mouse leaves canvas
 canvasElement.addEventListener("mouseleave", () => {
   isMouseDrawing = false;
-  currentPath = null;  // Reset current path
-  canvasElement.dispatchEvent(new Event("drawing-changed"));  // Trigger redraw
+  currentPath = null;
+  canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
-// Clear canvas and paths
 clearCanvasButton.addEventListener("click", () => {
   drawnPaths = [];
-  redoStack = [];  // Clear redo stack on clear
-  canvasElement.dispatchEvent(new Event("drawing-changed"));  // Trigger redraw
+  redoStack = [];
+  canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
-// Undo last drawn path
 undoButton.addEventListener("click", () => {
   if (drawnPaths.length > 0) {
-    const lastPath = drawnPaths.pop();  // Remove last path
-    redoStack.push(lastPath!);  // Push to redo stack
-    canvasElement.dispatchEvent(new Event("drawing-changed"));  // Trigger redraw
+    const lastPath = drawnPaths.pop();
+    redoStack.push(lastPath!);
+    canvasElement.dispatchEvent(new Event("drawing-changed"));
   }
 });
 
-// Redo last undone path
 redoButton.addEventListener("click", () => {
   if (redoStack.length > 0) {
-    const redoPath = redoStack.pop();  // Pop from redo stack
-    drawnPaths.push(redoPath!);  // Add back to paths
-    canvasElement.dispatchEvent(new Event("drawing-changed"));  // Trigger redraw
+    const redoPath = redoStack.pop();
+    drawnPaths.push(redoPath!);
+    canvasElement.dispatchEvent(new Event("drawing-changed"));
   }
 });
 
-// Redraw canvas on drawing change
 canvasElement.addEventListener("drawing-changed", () => {
-  canvasContext?.clearRect(0, 0, canvasElement.width, canvasElement.height);  // Clear canvas
+  canvasContext?.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
   drawnPaths.forEach(path => {
-    path.display(canvasContext!);  // Draw each path
+    path.display(canvasContext!);
   });
 });

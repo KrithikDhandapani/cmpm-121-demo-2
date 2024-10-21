@@ -115,5 +115,13 @@ button:focus-visible {
   font-size: 1rem;
   cursor: pointer;
 }
+.selectedTool {
+  background-color: #646cff;
+  color: white;
+}
+
+button {
+  margin: 5px; 
+}
 
 

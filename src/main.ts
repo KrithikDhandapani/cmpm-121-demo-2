@@ -19,74 +19,94 @@ const undoButton = document.querySelector<HTMLButtonElement>("#undoButton")!;
 const redoButton = document.querySelector<HTMLButtonElement>("#redoButton")!;
 const canvasContext = canvasElement.getContext("2d");
 
-let isMouseDrawing = false;
-let drawnPaths: { x: number; y: number }[][] = [];
-let currentPath: { x: number; y: number }[] = [];
-let redoStack: { x: number; y: number }[][] = [];
+class MarkerLine {
+  private points: { x: number; y: number }[] = [];
 
-// Mouse events for drawing
+  constructor(initialX: number, initialY: number) {
+    this.points.push({ x: initialX, y: initialY });
+  }
+
+  drag(x: number, y: number) {
+    this.points.push({ x, y });
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    if (this.points.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(this.points[0].x, this.points[0].y);
+      this.points.forEach(point => {
+        ctx.lineTo(point.x, point.y);
+      });
+      ctx.stroke();
+      ctx.closePath();
+    }
+  }
+}
+
+let isMouseDrawing = false;
+let drawnPaths: MarkerLine[] = [];  
+let currentPath: MarkerLine | null = null;  
+let redoStack: MarkerLine[] = [];  
+
+
 canvasElement.addEventListener("mousedown", (event) => {
   isMouseDrawing = true;
-  currentPath = [{ x: event.offsetX, y: event.offsetY }];
+  
+  currentPath = new MarkerLine(event.offsetX, event.offsetY);
   drawnPaths.push(currentPath);
-  redoStack = []; // Clear redo stack whenever a new path is drawn
+  redoStack = [];  
 });
 
 canvasElement.addEventListener("mousemove", (event) => {
-  if (isMouseDrawing) {
-    currentPath.push({ x: event.offsetX, y: event.offsetY });
+  if (isMouseDrawing && currentPath) {
+    currentPath.drag(event.offsetX, event.offsetY);
     canvasElement.dispatchEvent(new Event("drawing-changed"));
   }
 });
 
 canvasElement.addEventListener("mouseup", () => {
   isMouseDrawing = false;
+  currentPath = null;  
   canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
 canvasElement.addEventListener("mouseleave", () => {
   isMouseDrawing = false;
+  currentPath = null;
   canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
-// Clear canvas functionality
+
 clearCanvasButton.addEventListener("click", () => {
   drawnPaths = [];
-  redoStack = []; // Clear redo stack when the canvas is cleared
+  redoStack = [];  
   canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
-// Undo functionality
+
 undoButton.addEventListener("click", () => {
   if (drawnPaths.length > 0) {
-    const lastPath = drawnPaths.pop(); 
-    redoStack.push(lastPath!); 
-    canvasElement.dispatchEvent(new Event("drawing-changed")); 
+    const lastPath = drawnPaths.pop();  
+    redoStack.push(lastPath!);  
+    canvasElement.dispatchEvent(new Event("drawing-changed"));  
   }
 });
 
-// Redo functionality
+
 redoButton.addEventListener("click", () => {
   if (redoStack.length > 0) {
-    const redoPath = redoStack.pop(); 
-    drawnPaths.push(redoPath!); 
-    canvasElement.dispatchEvent(new Event("drawing-changed")); 
+    const redoPath = redoStack.pop();  
+    drawnPaths.push(redoPath!);  
+    canvasElement.dispatchEvent(new Event("drawing-changed"));  
   }
 });
 
 
 canvasElement.addEventListener("drawing-changed", () => {
   canvasContext?.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
   
   drawnPaths.forEach(path => {
-    if (path.length > 1) {
-      canvasContext?.beginPath();
-      canvasContext?.moveTo(path[0].x, path[0].y);
-      path.forEach(point => {
-        canvasContext?.lineTo(point.x, point.y);
-      });
-      canvasContext?.stroke();
-      canvasContext?.closePath();
-    }
+    path.display(canvasContext!);
   });
 });

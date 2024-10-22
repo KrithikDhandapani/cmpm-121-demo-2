@@ -23,16 +23,20 @@ const thinMarkerButton = document.querySelector<HTMLButtonElement>("#thinMarkerB
 const thickMarkerButton = document.querySelector<HTMLButtonElement>("#thickMarkerButton")!;
 const canvasContext = canvasElement.getContext("2d");
 
-// Default marker thickness
-let currentThickness = 2; 
+let currentThickness = 2;  
+let isMouseDrawing = false;
+let drawnPaths: MarkerLine[] = [];  
+let currentPath: MarkerLine | null = null;  
+let redoStack: MarkerLine[] = [];  
+let toolPreview: ToolPreview | null = null; // Tool preview object
 
 class MarkerLine {
   private points: { x: number; y: number }[] = [];
-  private thickness: number;  // Line thickness
+  private thickness: number; 
 
   constructor(initialX: number, initialY: number, thickness: number) {
     this.points.push({ x: initialX, y: initialY });
-    this.thickness = thickness;  // Set line thickness
+    this.thickness = thickness;
   }
 
   drag(x: number, y: number) {
@@ -46,42 +50,72 @@ class MarkerLine {
       this.points.forEach(point => {
         ctx.lineTo(point.x, point.y);
       });
-      ctx.lineWidth = this.thickness;  // Set line width based on thickness
+      ctx.lineWidth = this.thickness;
       ctx.stroke();
       ctx.closePath();
     }
   }
 }
 
-let isMouseDrawing = false;
-let drawnPaths: MarkerLine[] = [];  
-let currentPath: MarkerLine | null = null;  
-let redoStack: MarkerLine[] = [];
+// Class to represent the tool preview
+class ToolPreview {
+  private x: number = 0;
+  private y: number = 0;
+  private thickness: number; 
 
+  constructor(thickness: number) {
+    this.thickness = thickness;
+  }
+
+  setPosition(x: number, y: number) {
+    this.x = x;
+    this.y = y; // Update the y position as well
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.thickness, 0, Math.PI * 2); 
+    ctx.fillStyle = "rgba(255, 165, 0, 0.5)"; 
+    ctx.fill();
+    ctx.closePath();
+  }
+}
+
+// Handle tool selection for thin marker
 thinMarkerButton.addEventListener("click", () => {
-  currentThickness = 2;  // Set to thin line
-  selectTool(thinMarkerButton);  // Add selected class to button
+  currentThickness = 2;  
+  selectTool(thinMarkerButton);
+  toolPreview = new ToolPreview(currentThickness); // Update preview tool
 });
 
+// Handle tool selection for thick marker
 thickMarkerButton.addEventListener("click", () => {
-  currentThickness = 6;  // Set to thick line
-  selectTool(thickMarkerButton);  // Add selected class to button
+  currentThickness = 6;  
+  selectTool(thickMarkerButton);  
+  toolPreview = new ToolPreview(currentThickness); // Update preview tool
 });
 
+// Function to highlight the selected tool
 function selectTool(button: HTMLButtonElement) {
   thinMarkerButton.classList.remove("selectedTool");
   thickMarkerButton.classList.remove("selectedTool");
   button.classList.add("selectedTool");
 }
 
+// Mouse event listeners for drawing
 canvasElement.addEventListener("mousedown", (event) => {
   isMouseDrawing = true;
-  currentPath = new MarkerLine(event.offsetX, event.offsetY, currentThickness);  // Pass thickness
+  currentPath = new MarkerLine(event.offsetX, event.offsetY, currentThickness);
   drawnPaths.push(currentPath);
   redoStack = [];
+  canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
 canvasElement.addEventListener("mousemove", (event) => {
+  if (!isMouseDrawing && toolPreview) {
+    toolPreview.setPosition(event.offsetX, event.offsetY); // Update preview position
+    canvasElement.dispatchEvent(new Event("tool-moved")); // Fire tool-moved event
+  }
   if (isMouseDrawing && currentPath) {
     currentPath.drag(event.offsetX, event.offsetY);
     canvasElement.dispatchEvent(new Event("drawing-changed"));
@@ -122,10 +156,23 @@ redoButton.addEventListener("click", () => {
   }
 });
 
+// Handle drawing-changed event
 canvasElement.addEventListener("drawing-changed", () => {
   canvasContext?.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
   drawnPaths.forEach(path => {
     path.display(canvasContext!);
   });
+
+  if (!isMouseDrawing && toolPreview) {
+    toolPreview.draw(canvasContext!); // Draw the tool preview when not drawing
+  }
+});
+
+// Handle tool-moved event to update preview position
+canvasElement.addEventListener("tool-moved", () => {
+  if (!isMouseDrawing && toolPreview) {
+    // The preview position is already updated in the mousemove event
+    canvasElement.dispatchEvent(new Event("drawing-changed")); // Redraw the preview
+  }
 });

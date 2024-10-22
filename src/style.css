@@ -101,12 +101,12 @@ button:focus-visible {
   margin: 20px auto;
 }
 #drawingCanvas {
-  border: 2px solid black;
-  border-radius: 15px;
-  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-  display: block;
-  margin: 20px auto;
+  background-color: white; 
+  border: 2px solid orange; 
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
+
 
 #clearCanvasButton {
   display: block;
@@ -116,7 +116,7 @@ button:focus-visible {
   cursor: pointer;
 }
 .selectedTool {
-  background-color: #646cff;
+  background-color: #646cff; 
   color: white;
 }
 

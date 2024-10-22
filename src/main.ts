@@ -23,31 +23,31 @@ const thinMarkerButton = document.querySelector<HTMLButtonElement>("#thinMarkerB
 const thickMarkerButton = document.querySelector<HTMLButtonElement>("#thickMarkerButton")!;
 const canvasContext = canvasElement.getContext("2d");
 
-let currentThickness = 2;  
-let isMouseDrawing = false;
-let drawnPaths: MarkerLine[] = [];  
-let currentPath: MarkerLine | null = null;  
-let redoStack: MarkerLine[] = [];  
+let currentMarkerThickness = 2;  
+let isDrawing = false;  // Renamed for clarity
+let completedPaths: MarkerLine[] = [];  
+let activePath: MarkerLine | null = null;  
+let redoPathsStack: MarkerLine[] = [];  
 let toolPreview: ToolPreview | null = null; // Tool preview object
 
 class MarkerLine {
-  private points: { x: number; y: number }[] = [];
+  private pathPoints: { x: number; y: number }[] = []; // Renamed for clarity
   private thickness: number; 
 
   constructor(initialX: number, initialY: number, thickness: number) {
-    this.points.push({ x: initialX, y: initialY });
+    this.pathPoints.push({ x: initialX, y: initialY });
     this.thickness = thickness;
   }
 
   drag(x: number, y: number) {
-    this.points.push({ x, y });
+    this.pathPoints.push({ x, y });
   }
 
   display(ctx: CanvasRenderingContext2D) {
-    if (this.points.length > 1) {
+    if (this.pathPoints.length > 1) {
       ctx.beginPath();
-      ctx.moveTo(this.points[0].x, this.points[0].y);
-      this.points.forEach(point => {
+      ctx.moveTo(this.pathPoints[0].x, this.pathPoints[0].y);
+      this.pathPoints.forEach(point => {
         ctx.lineTo(point.x, point.y);
       });
       ctx.lineWidth = this.thickness;
@@ -59,8 +59,8 @@ class MarkerLine {
 
 // Class to represent the tool preview
 class ToolPreview {
-  private x: number = 0;
-  private y: number = 0;
+  private previewX: number = 0; // Renamed for clarity
+  private previewY: number = 0; // Renamed for clarity
   private thickness: number; 
 
   constructor(thickness: number) {
@@ -68,13 +68,13 @@ class ToolPreview {
   }
 
   setPosition(x: number, y: number) {
-    this.x = x;
-    this.y = y; // Update the y position as well
+    this.previewX = x;
+    this.previewY = y; // Update the y position as well
   }
 
   draw(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.thickness, 0, Math.PI * 2); 
+    ctx.arc(this.previewX, this.previewY, this.thickness, 0, Math.PI * 2); 
     ctx.fillStyle = "rgba(255, 165, 0, 0.5)"; 
     ctx.fill();
     ctx.closePath();
@@ -83,20 +83,20 @@ class ToolPreview {
 
 // Handle tool selection for thin marker
 thinMarkerButton.addEventListener("click", () => {
-  currentThickness = 2;  
-  selectTool(thinMarkerButton);
-  toolPreview = new ToolPreview(currentThickness); // Update preview tool
+  currentMarkerThickness = 2;  
+  highlightSelectedTool(thinMarkerButton);
+  toolPreview = new ToolPreview(currentMarkerThickness); // Update preview tool
 });
 
 // Handle tool selection for thick marker
 thickMarkerButton.addEventListener("click", () => {
-  currentThickness = 6;  
-  selectTool(thickMarkerButton);  
-  toolPreview = new ToolPreview(currentThickness); // Update preview tool
+  currentMarkerThickness = 6;  
+  highlightSelectedTool(thickMarkerButton);  
+  toolPreview = new ToolPreview(currentMarkerThickness); // Update preview tool
 });
 
 // Function to highlight the selected tool
-function selectTool(button: HTMLButtonElement) {
+function highlightSelectedTool(button: HTMLButtonElement) {
   thinMarkerButton.classList.remove("selectedTool");
   thickMarkerButton.classList.remove("selectedTool");
   button.classList.add("selectedTool");
@@ -104,54 +104,54 @@ function selectTool(button: HTMLButtonElement) {
 
 // Mouse event listeners for drawing
 canvasElement.addEventListener("mousedown", (event) => {
-  isMouseDrawing = true;
-  currentPath = new MarkerLine(event.offsetX, event.offsetY, currentThickness);
-  drawnPaths.push(currentPath);
-  redoStack = [];
+  isDrawing = true;
+  activePath = new MarkerLine(event.offsetX, event.offsetY, currentMarkerThickness);
+  completedPaths.push(activePath);
+  redoPathsStack = [];
   canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
 canvasElement.addEventListener("mousemove", (event) => {
-  if (!isMouseDrawing && toolPreview) {
+  if (!isDrawing && toolPreview) {
     toolPreview.setPosition(event.offsetX, event.offsetY); // Update preview position
     canvasElement.dispatchEvent(new Event("tool-moved")); // Fire tool-moved event
   }
-  if (isMouseDrawing && currentPath) {
-    currentPath.drag(event.offsetX, event.offsetY);
+  if (isDrawing && activePath) {
+    activePath.drag(event.offsetX, event.offsetY);
     canvasElement.dispatchEvent(new Event("drawing-changed"));
   }
 });
 
 canvasElement.addEventListener("mouseup", () => {
-  isMouseDrawing = false;
-  currentPath = null;
+  isDrawing = false;
+  activePath = null;
   canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
 canvasElement.addEventListener("mouseleave", () => {
-  isMouseDrawing = false;
-  currentPath = null;
+  isDrawing = false;
+  activePath = null;
   canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
 clearCanvasButton.addEventListener("click", () => {
-  drawnPaths = [];
-  redoStack = [];
+  completedPaths = [];
+  redoPathsStack = [];
   canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
 undoButton.addEventListener("click", () => {
-  if (drawnPaths.length > 0) {
-    const lastPath = drawnPaths.pop();
-    redoStack.push(lastPath!);
+  if (completedPaths.length > 0) {
+    const lastPath = completedPaths.pop();
+    redoPathsStack.push(lastPath!);
     canvasElement.dispatchEvent(new Event("drawing-changed"));
   }
 });
 
 redoButton.addEventListener("click", () => {
-  if (redoStack.length > 0) {
-    const redoPath = redoStack.pop();
-    drawnPaths.push(redoPath!);
+  if (redoPathsStack.length > 0) {
+    const redoPath = redoPathsStack.pop();
+    completedPaths.push(redoPath!);
     canvasElement.dispatchEvent(new Event("drawing-changed"));
   }
 });
@@ -160,18 +160,18 @@ redoButton.addEventListener("click", () => {
 canvasElement.addEventListener("drawing-changed", () => {
   canvasContext?.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-  drawnPaths.forEach(path => {
+  completedPaths.forEach(path => {
     path.display(canvasContext!);
   });
 
-  if (!isMouseDrawing && toolPreview) {
+  if (!isDrawing && toolPreview) {
     toolPreview.draw(canvasContext!); // Draw the tool preview when not drawing
   }
 });
 
 // Handle tool-moved event to update preview position
 canvasElement.addEventListener("tool-moved", () => {
-  if (!isMouseDrawing && toolPreview) {
+  if (!isDrawing && toolPreview) {
     // The preview position is already updated in the mousemove event
     canvasElement.dispatchEvent(new Event("drawing-changed")); // Redraw the preview
   }

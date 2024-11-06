@@ -16,6 +16,10 @@ appContainer.innerHTML = `
   <div id="stickersContainer"></div>
   <button id="customStickerButton">Create Custom Sticker</button>
   <button id="exportButton">Export</button>
+  <div id="colorBar">
+    <label for="colorPicker">Select Color: </label>
+    <input type="color" id="colorPicker" value="#000000">
+  </div>
 `;
 
 const canvasElement = document.querySelector<HTMLCanvasElement>("#drawingCanvas")!;
@@ -36,6 +40,7 @@ let activePath: MarkerLine | null = null;
 let redoPathsStack: (MarkerLine | StickerPreview)[] = [];
 let toolPreview: ToolPreview | null = null;
 let currentSticker: StickerPreview | null = null;
+let currentColor = "#000000"; // Default black color
 
 interface Sticker {
   icon: string;
@@ -48,8 +53,7 @@ const stickers: Sticker[] = [
   { icon: "🦄", label: "Unicorn" }
 ];
 
-
-// Helper function to create a button for each sticker
+// Create sticker button
 function addStickerButton(sticker: Sticker, index: number) {
   const stickerButton = document.createElement("button");
   stickerButton.textContent = sticker.icon;
@@ -58,16 +62,16 @@ function addStickerButton(sticker: Sticker, index: number) {
   stickersContainer.appendChild(stickerButton);
 }
 
-// Render initial stickers
+// Render stickers
 stickers.forEach((sticker, index) => addStickerButton(sticker, index));
 
-// Function to add custom sticker
+// Add custom sticker
 customStickerButton.addEventListener("click", () => {
   const customIcon = prompt("Enter a custom sticker emoji:", "✨");
   if (customIcon) {
     const newSticker = { icon: customIcon, label: "Custom Sticker" };
     stickers.push(newSticker);
-    addStickerButton(newSticker, stickers.length - 1);
+    addStickerButton(newSticker, stickers.length - 1); 
   }
 });
 
@@ -75,7 +79,7 @@ interface Drawable {
   draw(ctx: CanvasRenderingContext2D): void;
 }
 
-// Update MarkerLine to implement the Drawable interface
+// MarkerLine class
 class MarkerLine implements Drawable {
   private pathPoints: { x: number; y: number }[] = [];
   private thickness: number;
@@ -97,18 +101,18 @@ class MarkerLine implements Drawable {
         ctx.lineTo(point.x, point.y);
       });
       ctx.lineWidth = this.thickness;
+      ctx.strokeStyle = currentColor;  // Apply selected color
       ctx.stroke();
       ctx.closePath();
     }
   }
 
-  // Add a draw method that matches the Drawable interface
   draw(ctx: CanvasRenderingContext2D) {
     this.display(ctx);
   }
 }
 
-// Class for tool preview
+// ToolPreview class
 class ToolPreview {
   private previewX: number = 0;
   private previewY: number = 0;
@@ -132,6 +136,7 @@ class ToolPreview {
   }
 }
 
+// StickerPreview class
 class StickerPreview implements Drawable {
   private sticker: string;
   private positionX: number = 0;
@@ -153,29 +158,60 @@ class StickerPreview implements Drawable {
   }
 }
 
+// Random color generator
+function getRandomColor(): string {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+
+// Thin marker button
 thinMarkerButton.addEventListener("click", () => {
   currentMarkerThickness = 3;
+  currentColor = getRandomColor();
   highlightSelectedTool(thinMarkerButton);
   toolPreview = new ToolPreview(currentMarkerThickness);
 });
 
+// Thick marker button
 thickMarkerButton.addEventListener("click", () => {
   currentMarkerThickness = 7;
+  currentColor = getRandomColor();
   highlightSelectedTool(thickMarkerButton);
   toolPreview = new ToolPreview(currentMarkerThickness);
 });
 
+// Select sticker
 function selectSticker(sticker: string) {
+  currentColor = getRandomColor();
   currentSticker = new StickerPreview(sticker);
   canvasElement.dispatchEvent(new Event("tool-moved"));
 }
 
+// Highlight selected tool
 function highlightSelectedTool(button: HTMLButtonElement) {
   thinMarkerButton.classList.remove("selectedTool");
   thickMarkerButton.classList.remove("selectedTool");
   button.classList.add("selectedTool");
 }
 
+// Handle color picker
+const colorPicker = document.querySelector<HTMLInputElement>("#colorPicker")!;
+colorPicker.addEventListener("input", (event) => {
+  currentColor = (event.target as HTMLInputElement).value;
+  highlightSelectedColor(currentColor); 
+});
+
+// Highlight selected color
+function highlightSelectedColor(color: string) {
+  const colorBar = document.querySelector<HTMLDivElement>("#colorBar")!;
+  colorBar.style.backgroundColor = color;
+}
+
+// Mouse events for drawing
 canvasElement.addEventListener("mousedown", (event) => {
   if (currentSticker) {
     currentSticker.setPosition(event.offsetX, event.offsetY);
@@ -220,12 +256,14 @@ canvasElement.addEventListener("mouseleave", () => {
   canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
+// Clear canvas
 clearCanvasButton.addEventListener("click", () => {
   completedPaths = [];
   redoPathsStack = [];
   canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
+// Undo button
 undoButton.addEventListener("click", () => {
   if (completedPaths.length > 0) {
     const lastPath = completedPaths.pop();
@@ -234,6 +272,7 @@ undoButton.addEventListener("click", () => {
   }
 });
 
+// Redo button
 redoButton.addEventListener("click", () => {
   if (redoPathsStack.length > 0) {
     const redoPath = redoPathsStack.pop();
@@ -242,19 +281,14 @@ redoButton.addEventListener("click", () => {
   }
 });
 
+// Drawing changed event
 canvasElement.addEventListener("drawing-changed", () => {
   canvasContext?.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-  completedPaths.forEach(path => {
-    if (path instanceof MarkerLine) {
-      path.display(canvasContext!);
-    } else if (path instanceof StickerPreview) {
-      path.draw(canvasContext!);
-    }
-  });
+  completedPaths.forEach(path => path.draw(canvasContext!));
 
-  if (!isDrawing && toolPreview) {
-    toolPreview.draw(canvasContext!); 
+  if (toolPreview) {
+    toolPreview.draw(canvasContext!);
   }
 
   if (currentSticker) {
@@ -262,30 +296,20 @@ canvasElement.addEventListener("drawing-changed", () => {
   }
 });
 
-canvasElement.addEventListener("tool-moved", () => {
-  if (!isDrawing && toolPreview) {
-    canvasElement.dispatchEvent(new Event("drawing-changed"));
-  }
+// Export drawing
+exportButton.addEventListener("click", () => {
+  const dataURL = canvasElement.toDataURL();
+  const link = document.createElement("a");
+  link.href = dataURL;
+  link.download = "drawing.png";
+  link.click();
 });
 
-exportButton.addEventListener("click", () => {
-  const exportCanvas = document.createElement("canvas");
-  exportCanvas.width = 1024;
-  exportCanvas.height = 1024;
-  const exportContext = exportCanvas.getContext("2d")!;
-
-  exportContext.scale(4, 4);
-
-  completedPaths.forEach(path => path.draw(exportContext));
-
-  exportCanvas.toBlob(blob => {
-    if (blob) {
-      const url = URL.createObjectURL(blob);
-      const downloadLink = document.createElement("a");
-      downloadLink.href = url;
-      downloadLink.download = "drawing.png";
-      downloadLink.click();
-      URL.revokeObjectURL(url);
-    }
-  }, "image/png");
+// Tool moved event
+canvasElement.addEventListener("tool-moved", () => {
+  canvasContext?.clearRect(0, 0, canvasElement.width, canvasElement.height);
+  completedPaths.forEach(path => path.draw(canvasContext!));
+  if (toolPreview) {
+    toolPreview.draw(canvasContext!);
+  }
 });

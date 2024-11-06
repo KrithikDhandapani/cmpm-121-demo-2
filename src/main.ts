@@ -132,13 +132,11 @@ class ToolPreview {
   }
 }
 
-// Update StickerPreview to implement the Drawable interface
 class StickerPreview implements Drawable {
   private sticker: string;
   private positionX: number = 0;
   private positionY: number = 0;
-  private size: number = 164; // Increased size for the emoji
-
+  private size: number = 164;
 
   constructor(sticker: string) {
     this.sticker = sticker;
@@ -155,9 +153,6 @@ class StickerPreview implements Drawable {
   }
 }
 
-
-
-// Handle tool selection for markers
 thinMarkerButton.addEventListener("click", () => {
   currentMarkerThickness = 3;
   highlightSelectedTool(thinMarkerButton);
@@ -170,20 +165,17 @@ thickMarkerButton.addEventListener("click", () => {
   toolPreview = new ToolPreview(currentMarkerThickness);
 });
 
-// Function to select a sticker
 function selectSticker(sticker: string) {
   currentSticker = new StickerPreview(sticker);
   canvasElement.dispatchEvent(new Event("tool-moved"));
 }
 
-// Function to highlight the selected tool
 function highlightSelectedTool(button: HTMLButtonElement) {
   thinMarkerButton.classList.remove("selectedTool");
   thickMarkerButton.classList.remove("selectedTool");
   button.classList.add("selectedTool");
 }
 
-// Mouse event listeners
 canvasElement.addEventListener("mousedown", (event) => {
   if (currentSticker) {
     currentSticker.setPosition(event.offsetX, event.offsetY);
@@ -228,7 +220,6 @@ canvasElement.addEventListener("mouseleave", () => {
   canvasElement.dispatchEvent(new Event("drawing-changed"));
 });
 
-// Clear, undo, and redo buttons
 clearCanvasButton.addEventListener("click", () => {
   completedPaths = [];
   redoPathsStack = [];
@@ -258,7 +249,7 @@ canvasElement.addEventListener("drawing-changed", () => {
     if (path instanceof MarkerLine) {
       path.display(canvasContext!);
     } else if (path instanceof StickerPreview) {
-      path.draw(canvasContext!); // Draw stickers with larger size
+      path.draw(canvasContext!);
     }
   });
 
@@ -267,18 +258,15 @@ canvasElement.addEventListener("drawing-changed", () => {
   }
 
   if (currentSticker) {
-    currentSticker.draw(canvasContext!); // Draw the sticker preview with larger size
+    currentSticker.draw(canvasContext!);
   }
 });
 
-
-// Handle tool-moved event
 canvasElement.addEventListener("tool-moved", () => {
   if (!isDrawing && toolPreview) {
     canvasElement.dispatchEvent(new Event("drawing-changed"));
   }
 });
-
 
 exportButton.addEventListener("click", () => {
   const exportCanvas = document.createElement("canvas");

@@ -29,7 +29,7 @@ const exportButton = document.querySelector<HTMLButtonElement>("#exportButton")!
 const stickersContainer = document.querySelector<HTMLDivElement>("#stickersContainer")!;
 const canvasContext = canvasElement.getContext("2d");
 
-let currentMarkerThickness = 2;
+let currentMarkerThickness = 3;
 let isDrawing = false;
 let completedPaths: (MarkerLine | StickerPreview)[] = [];
 let activePath: MarkerLine | null = null;
@@ -43,10 +43,11 @@ interface Sticker {
 }
 
 const stickers: Sticker[] = [
-  { icon: "😊", label: "Smile" },
-  { icon: "🎉", label: "Party Popper" },
-  { icon: "🌟", label: "Star" }
+  { icon: "🐱", label: "Cat" },
+  { icon: "🐶", label: "Dog" },
+  { icon: "🦄", label: "Unicorn" }
 ];
+
 
 // Helper function to create a button for each sticker
 function addStickerButton(sticker: Sticker, index: number) {
@@ -136,6 +137,8 @@ class StickerPreview implements Drawable {
   private sticker: string;
   private positionX: number = 0;
   private positionY: number = 0;
+  private size: number = 164; // Increased size for the emoji
+
 
   constructor(sticker: string) {
     this.sticker = sticker;
@@ -156,13 +159,13 @@ class StickerPreview implements Drawable {
 
 // Handle tool selection for markers
 thinMarkerButton.addEventListener("click", () => {
-  currentMarkerThickness = 2;
+  currentMarkerThickness = 3;
   highlightSelectedTool(thinMarkerButton);
   toolPreview = new ToolPreview(currentMarkerThickness);
 });
 
 thickMarkerButton.addEventListener("click", () => {
-  currentMarkerThickness = 6;
+  currentMarkerThickness = 7;
   highlightSelectedTool(thickMarkerButton);
   toolPreview = new ToolPreview(currentMarkerThickness);
 });
@@ -248,7 +251,6 @@ redoButton.addEventListener("click", () => {
   }
 });
 
-// Redraw function
 canvasElement.addEventListener("drawing-changed", () => {
   canvasContext?.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
@@ -256,18 +258,19 @@ canvasElement.addEventListener("drawing-changed", () => {
     if (path instanceof MarkerLine) {
       path.display(canvasContext!);
     } else if (path instanceof StickerPreview) {
-      path.draw(canvasContext!);
+      path.draw(canvasContext!); // Draw stickers with larger size
     }
   });
 
   if (!isDrawing && toolPreview) {
-    toolPreview.draw(canvasContext!);
+    toolPreview.draw(canvasContext!); 
   }
 
   if (currentSticker) {
-    currentSticker.draw(canvasContext!);
+    currentSticker.draw(canvasContext!); // Draw the sticker preview with larger size
   }
 });
+
 
 // Handle tool-moved event
 canvasElement.addEventListener("tool-moved", () => {

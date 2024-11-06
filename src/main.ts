@@ -15,6 +15,7 @@ appContainer.innerHTML = `
   <button id="thickMarkerButton">Thick Marker</button>
   <div id="stickersContainer"></div>
   <button id="customStickerButton">Create Custom Sticker</button>
+  <button id="exportButton">Export</button>
 `;
 
 const canvasElement = document.querySelector<HTMLCanvasElement>("#drawingCanvas")!;
@@ -24,6 +25,7 @@ const redoButton = document.querySelector<HTMLButtonElement>("#redoButton")!;
 const thinMarkerButton = document.querySelector<HTMLButtonElement>("#thinMarkerButton")!;
 const thickMarkerButton = document.querySelector<HTMLButtonElement>("#thickMarkerButton")!;
 const customStickerButton = document.querySelector<HTMLButtonElement>("#customStickerButton")!;
+const exportButton = document.querySelector<HTMLButtonElement>("#exportButton")!;
 const stickersContainer = document.querySelector<HTMLDivElement>("#stickersContainer")!;
 const canvasContext = canvasElement.getContext("2d");
 
@@ -68,8 +70,12 @@ customStickerButton.addEventListener("click", () => {
   }
 });
 
-// Class for marker lines
-class MarkerLine {
+interface Drawable {
+  draw(ctx: CanvasRenderingContext2D): void;
+}
+
+// Update MarkerLine to implement the Drawable interface
+class MarkerLine implements Drawable {
   private pathPoints: { x: number; y: number }[] = [];
   private thickness: number;
 
@@ -93,6 +99,11 @@ class MarkerLine {
       ctx.stroke();
       ctx.closePath();
     }
+  }
+
+  // Add a draw method that matches the Drawable interface
+  draw(ctx: CanvasRenderingContext2D) {
+    this.display(ctx);
   }
 }
 
@@ -120,8 +131,8 @@ class ToolPreview {
   }
 }
 
-// Class for sticker preview
-class StickerPreview {
+// Update StickerPreview to implement the Drawable interface
+class StickerPreview implements Drawable {
   private sticker: string;
   private positionX: number = 0;
   private positionY: number = 0;
@@ -140,6 +151,8 @@ class StickerPreview {
     ctx.fillText(this.sticker, this.positionX, this.positionY);
   }
 }
+
+
 
 // Handle tool selection for markers
 thinMarkerButton.addEventListener("click", () => {
@@ -261,4 +274,27 @@ canvasElement.addEventListener("tool-moved", () => {
   if (!isDrawing && toolPreview) {
     canvasElement.dispatchEvent(new Event("drawing-changed"));
   }
+});
+
+
+exportButton.addEventListener("click", () => {
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = 1024;
+  exportCanvas.height = 1024;
+  const exportContext = exportCanvas.getContext("2d")!;
+
+  exportContext.scale(4, 4);
+
+  completedPaths.forEach(path => path.draw(exportContext));
+
+  exportCanvas.toBlob(blob => {
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const downloadLink = document.createElement("a");
+      downloadLink.href = url;
+      downloadLink.download = "drawing.png";
+      downloadLink.click();
+      URL.revokeObjectURL(url);
+    }
+  }, "image/png");
 });

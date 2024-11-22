@@ -50,7 +50,9 @@ interface Sticker {
 const stickers: Sticker[] = [
   { icon: "🐱", label: "Cat" },
   { icon: "🐶", label: "Dog" },
-  { icon: "🦄", label: "Unicorn" }
+  { icon: "🦄", label: "Unicorn" },
+  { icon: "🐘", label: "Dog" },
+  { icon: "🦒", label: "Dog" },
 ];
 
 // Create sticker button

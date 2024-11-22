@@ -5,7 +5,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #aab999;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -84,13 +84,13 @@ button:focus-visible {
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
-    background-color: #ffffff;
+    background-color: #84996c;
   }
   a:hover {
     color: #747bff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: #aab999;
   }
 }
 #myCanvas {
@@ -116,8 +116,8 @@ button:focus-visible {
   cursor: pointer;
 }
 .selectedTool {
-  background-color: #646cff; 
-  color: white;
+  background-color: #677558; 
+  color: rgb(0, 0, 0);
 }
 
 button {
